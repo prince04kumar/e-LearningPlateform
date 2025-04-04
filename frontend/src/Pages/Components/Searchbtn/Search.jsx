@@ -15,14 +15,6 @@ function Search() {
   const [Tdec, setTeacherDetails] = useState(null);
   const [tname, setTname] = useState({});
 
-  const price = {
-    math: 700,
-    physics: 800,
-    computer: 1000,
-    chemistry: 600,
-    biology: 500,
-  };
-
   const daysName = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
   const closePopup = () => {
@@ -95,7 +87,6 @@ function Search() {
         headers: {
           "Content-Type": "application/json",
         },
-        // body: JSON.stringify({}),
       }
     );
     const res = await check.json();
@@ -103,94 +94,29 @@ function Search() {
     console.log(res);
 
     if(res.statusCode === 200){
-
-    const data = await fetch(`/api/payment/course/${id}/${courseName}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ fees: price[courseName]*100 }),
-    });
-
-    const DATA = await data.json();
-    // console.log(DATA.data.id)
-
-    const Key = await fetch("/api/payment/razorkey", {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-    const response = await Key.json();
-
-    const options = {
-      key: response.data.key,
-      amount: price[courseName]*100,
-      currency: "INR",
-      name: "Shiksharthee",
-      description: "Enroll in a course",
-      image: logo,
-      order_id: DATA.data.id, // Include the order_id from the response
-      handler: async (response) => {
-        const { razorpay_payment_id, razorpay_order_id, razorpay_signature } =
-          response;
-
-        // Send the payment details to the server for verification
-        const verificationData = {
-          razorpay_payment_id,
-          razorpay_order_id,
-          razorpay_signature,
-        };
-
-        const verificationResponse = await fetch(
-          `/api/payment/confirmation/course/${id}`,
+      try {
+        let response = await fetch(
+          `/api/course/${courseName}/${id}/add/student/${ID}`,
           {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
             },
-            body: JSON.stringify(verificationData),
           }
         );
 
-        const res = await verificationResponse.json();
-        console.log(res.statusCode);
+        let res = await response.json();
+        console.log(res);
         if (res.statusCode === 200) {
-          try {
-            let response = await fetch(
-              `/api/course/${courseName}/${id}/add/student/${ID}`,
-              {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                // body: JSON.stringify({}),
-              }
-            );
-
-            let res = await response.json();
-            console.log(res);
-            setPopup(true);
-          } catch (error) {
-            console.log(error);
-          }
+          setPopup(true);
+        } else {
+          alert(res.message || "Error enrolling in course");
         }
-      },
-      prefill: {
-        name: "Gaurav Kumar",
-        email: "gaurav.kumar@example.com",
-      },
-      notes: {
-        address: "Razorpay Corporate Office",
-      },
-      theme: {
-        color: "#3399cc",
-      },
-    };
-
-    const rzp1 = new window.Razorpay(options);
-    rzp1.open();
-    }else{
+      } catch (error) {
+        console.log(error);
+        alert("Error enrolling in course");
+      }
+    } else {
       alert(res.message)
     }
   };

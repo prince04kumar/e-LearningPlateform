@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Input from "../DocumentVerification/InputComponent/Input.jsx";
 import InputUpload from "../DocumentVerification/Inputupload/InputUpload.jsx";
 import { useNavigate, useParams } from "react-router-dom";
@@ -14,15 +14,27 @@ const StudentDocument = () => {
   const accessToken = localStorage.getItem('accessToken');
  // console.log(accessToken);
 
+  const [formData, setFormData] = useState({
+    Phone: "",
+    Address: "",
+    Highesteducation: "",
+    SecondarySchool: "",
+    HigherSchool: "",
+    SecondaryMarks: "",
+    HigherMarks: "",
+    Aadhaar: null,
+    Secondary: null,
+    Higher: null,
+  });
+
   useEffect(() => {
-    
     const getData = async () => {
       try {
         const response = await fetch(`http://localhost:8000/api/student/StudentDocument/${Data}`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
-    "Authorization": `Bearer ${accessToken}`
+            "Authorization": `Bearer ${accessToken}`
           },
           credentials: 'include'
         });
@@ -32,27 +44,28 @@ const StudentDocument = () => {
         }
 
         const user = await response.json();
-     
+        setdata(user);
+
+        // Update form data after receiving response
+        setFormData({
+          Phone: user.Phone || "",
+          Address: user.Address || "",
+          Highesteducation: user.Highesteducation || "",
+          SecondarySchool: user.SecondarySchool || "",
+          HigherSchool: user.HigherSchool || "",
+          SecondaryMarks: user.SecondaryMarks || "",
+          HigherMarks: user.HigherMarks || "",
+          Aadhaar: null,
+          Secondary: null,
+          Higher: null,
+        });
       } catch (error) {
         setError(error.message);
       }
     };
 
     getData();
-  }, []);
-
-  const [formData, setFormData] = useState({
-    Phone: data.Phone || "",
-    Address: data.Address || "",
-    Highesteducation: data.Highesteducation || "",
-    SecondarySchool: data.SecondarySchool || "",
-    HigherSchool: data.HigherSchool || "",
-    SecondaryMarks: data.SecondaryMarks || "",
-    HigherMarks: data.HigherMarks || "",
-    Aadhaar: null,
-    Secondary: null,
-    Higher: null,
-  });
+  }, [Data, accessToken]); // Add missing dependencies
 
   const handleFileChange = (fileType, e) => {
     setFormData({
