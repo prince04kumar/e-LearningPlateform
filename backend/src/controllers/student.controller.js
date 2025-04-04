@@ -9,49 +9,32 @@ import { Sendmail } from "../utils/Nodemailer.js";
 
 
 
+// Replace the current verifyEmail function with this:
+
 const verifyEmail = async (Email, Firstname, createdStudent_id) => {
     try {
-        const emailsender = nodemailer.createTransport({
-            host: 'smtp.gmail.com',
-            port: 587,
-            secure: false,
-            requireTLS: true,
-            auth: {
-                user:"princekumar72131@gmail.com" ,
-                pass:"uykbxjhrzwnazgyq",
-            }
-        });
-        // const mailOptions = {
-        //     from: "elearningsnu@gmail.com",
-        //     to: Email,
-        //     subject: "Verify your E-mail",
-        //     html: `<p> Hi ${Firstname}, Please click here to <a href="http://localhost:4400/api/student/verify?id=${createdStudent_id}">verify</a> your E-mail. </p>`
-        // };
+        const subject = "Verify your E-mail";
+        const message = `
+        <div style="text-align: center;">
+            <p style="margin: 20px;"> Hi ${Firstname}, Please click the button below to verify your E-mail. </p>
+            <img src="https://img.freepik.com/free-vector/illustration-e-mail-protection-concept-e-mail-envelope-with-file-document-attach-file-system-security-approved_1150-41788.jpg?size=626&ext=jpg&uid=R140292450&ga=GA1.1.553867909.1706200225&semt=ais" alt="Verification Image" style="width: 100%; height: auto;">
+            <br>
+            <a href="http://localhost:8000/api/student/verify?id=${createdStudent_id}">
+                <button style="background-color: black; color: white; padding: 10px 20px; text-align: center; text-decoration: none; display: inline-block; font-size: 16px; margin: 10px 0; cursor: pointer;">Verify Email</button>
+            </a>
+        </div>`;
 
-        const mailOptions = {
-            from: "elearningsnu@gmail.com",
-            to: Email,
-            subject: "Verify your E-mail",
-            html: `
-            <div style="text-align: center;">
-                <p style="margin: 20px;"> Hi ${Firstname}, Please click the button below to verify your E-mail. </p>
-                <img src="https://img.freepik.com/free-vector/illustration-e-mail-protection-concept-e-mail-envelope-with-file-document-attach-file-system-security-approved_1150-41788.jpg?size=626&ext=jpg&uid=R140292450&ga=GA1.1.553867909.1706200225&semt=ais" alt="Verification Image" style="width: 100%; height: auto;">
-                <br>
-                <a href="http://localhost:8000/api/student/verify?id=${createdStudent_id}">
-                    <button style="background-color: black; color: white; padding: 10px 20px; text-align: center; text-decoration: none; display: inline-block; font-size: 16px; margin: 10px 0; cursor: pointer;">Verify Email</button>
-                </a>
-            </div>`
-        };
-
-        emailsender.sendMail(mailOptions, function(error) {
-            if (error) {
-                throw new ApiError(400, "Sending email verification failed");
-            } else {
-                console.log("Verification mail sent successfully");
-            }
-        });
+        // Use your Sendmail utility instead of direct nodemailer
+        const result = await Sendmail(Email, subject, message);
+        
+        if (!result.success) {
+            throw new ApiError(400, "Sending email verification failed: " + result.error);
+        }
+        
+        console.log("Verification mail sent successfully");
     } catch (error) {
-        throw new ApiError(400, "Failed to send email verification");
+        console.error("Email verification error:", error);
+        throw new ApiError(400, "Failed to send email verification: " + error.message);
     }
 };
 
@@ -159,79 +142,92 @@ const signup = asyncHandler(async (req, res) =>{
 
 })
 
-const mailVerified = asyncHandler(async(req,res)=>{
-        const id = req.query.id;
+// Replace the current mailVerified function with this:
 
-        const updatedInfo = await student.updateOne({ _id: id }, { $set: { Isverified: true } });
+const mailVerified = asyncHandler(async(req, res) => {
+    const id = req.query.id;
 
-        if (updatedInfo.nModified === 0) {
-            throw new ApiError(404, "Student not found or already verified");
-        }
-        return res.send(`
-        <div style="text-align: center; height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center;">
-            <img src="https://cdn-icons-png.flaticon.com/128/4436/4436481.png" alt="Verify Email Icon" style="width: 100px; height: 100px;">
-            <h1 style="font-size: 36px; font-weight: bold; padding: 20px;">Email Verified</h1>
-            <h4>Your email address was successfully verified.</h4>
-            <button style="padding: 10px 20px; background-color: #007bff; color: white; border: none; cursor: pointer; margin: 20px;" onclick="window.location.href = 'http://localhost:5173';">Go Back Home</button>
-        </div>
-        `);
-} )
+    const updatedInfo = await student.updateOne(
+        { _id: id }, 
+        { $set: { Isverified: true } }
+    );
+
+    // Check modifiedCount instead of nModified
+    if (updatedInfo.modifiedCount === 0) {
+        throw new ApiError(404, "Student not found or already verified");
+    }
+    
+    return res.send(`
+    <div style="text-align: center; height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+        <img src="https://cdn-icons-png.flaticon.com/128/4436/4436481.png" alt="Verify Email Icon" style="width: 100px; height: 100px;">
+        <h1 style="font-size: 36px; font-weight: bold; padding: 20px;">Email Verified</h1>
+        <h4>Your email address was successfully verified.</h4>
+        <button style="padding: 10px 20px; background-color: #007bff; color: white; border: none; cursor: pointer; margin: 20px;" onclick="window.location.href = 'http://localhost:5173';">Go Back Home</button>
+    </div>
+    `);
+});
 
 
-const login = asyncHandler(async(req,res) => {
-    console.log('suzzessfa')
+// Replace the current login function with this:
 
-    const Email = req.user.Email
-    const Password = req.user.Password
+const login = asyncHandler(async(req, res) => {
+    console.log('Login attempt received');
 
+    // Get credentials from request body, not req.user
+    const { Email, Password } = req.body;
 
     if([Email, Password].some((field) => field?.trim() === "")) {
-        throw new ApiError(400, "All fields are required");
+        throw new ApiError(400, "Email and password are required");
     }
 
-    const StdLogin = await student.findOne({
-        Email
-    })
+    const StdLogin = await student.findOne({ Email });
 
     if(!StdLogin){
-        throw new ApiError(400, "Student does not exist")
+        throw new ApiError(404, "Student does not exist");
     }
 
     if(!StdLogin.Isverified){
         throw new ApiError(401, "Email is not verified");
     }
 
-    const StdPassCheck = await StdLogin.isPasswordCorrect(Password)
+    const StdPassCheck = await StdLogin.isPasswordCorrect(Password);
 
     if(!StdPassCheck){
-        throw new ApiError(403,"Password is incorrect",)
+        throw new ApiError(403, "Password is incorrect");
     }
 
-    const tempStd = StdLogin._id
-
+    const tempStd = StdLogin._id;
     
-    const {Accesstoken, Refreshtoken} =  await generateAccessAndRefreshTokens(tempStd)
+    try {
+        const { Accesstoken, Refreshtoken } = await generateAccessAndRefreshTokens(tempStd);
+        
+        const loggedInStd = await student.findById(tempStd).select("-Password -Refreshtoken");
 
-    const loggedInStd = await student.findById(tempStd).select("-Password -Refreshtoken")
+        const options = {
+            httpOnly: true,
+            secure: true,
+        };
 
-    const options = {
-        httpOnly:true,
-        secure:true,
+        return res
+            .status(200)
+            .cookie("Accesstoken", Accesstoken, options)
+            .cookie("Refreshtoken", Refreshtoken, options)
+            .json(
+                new ApiResponse(
+                    200,
+                    {
+                        user: loggedInStd,
+                        Accesstoken,
+                        Refreshtoken
+                    }, 
+                    "Student logged in successfully"
+                )
+            );
+    } catch (error) {
+        console.error("Login error:", error);
+        throw new ApiError(500, "Login failed: " + error.message);
     }
-
-    return res
-    .status(200)
-    .cookie("Accesstoken", Accesstoken, options)
-    .cookie("Refreshtoken", Refreshtoken, options)
-    .json(
-        new ApiResponse(
-            200,{
-            user:loggedInStd
-            }, "logged in"
-            )
-    )
-
-})
+});
 
 const logout = asyncHandler(async(req,res)=>{
     await student.findByIdAndUpdate(
@@ -267,76 +263,89 @@ const getStudent = asyncHandler(async(req,res)=>{
     .status(200)
     .json(new ApiResponse(200, user, "Student is logged in"))
 })
-const addStudentDetails = asyncHandler(async(req, res)=>{
+// Enhance the addStudentDetails function error handling:
 
-    const id = req.params.id
-    if(req.Student._id != id){
-        throw new ApiError(400,"not authorized ")
+const addStudentDetails = asyncHandler(async(req, res) => {
+    console.log("hii")
+    try {
+        const id = req.params.id;
+        console.log("Processing document upload for student ID:", id);
+        
+        if(!req.Student || req.Student._id != id) {
+            throw new ApiError(401, "Unauthorized access");
+        }
+
+        const {Phone, Address, Highesteducation, SecondarySchool, HigherSchool, SecondaryMarks, HigherMarks} = req.body;
+
+        // Validate required fields
+        if ([Phone, Address, Highesteducation, SecondarySchool, HigherSchool, SecondaryMarks, HigherMarks].some((field) => !field || field.trim() === "")) {
+            throw new ApiError(400, "All fields are required");
+        }
+
+        // Check for duplicate phone
+        const alreadyExist = await studentdocs.findOne({Phone});
+        if(alreadyExist) {
+            throw new ApiError(400, "Phone number already exists");
+        }
+
+        // Log file info for debugging
+        console.log("Files received:", req.files);
+        
+        const AadhaarLocalPath = req.files?.Aadhaar?.[0]?.path;
+        const SecondaryLocalPath = req.files?.Secondary?.[0]?.path;
+        const HigherLocalPath = req.files?.Higher?.[0]?.path;
+
+        // Validate required files
+        if(!AadhaarLocalPath) {
+            throw new ApiError(400, "Aadhaar card file is required");
+        }
+        if(!SecondaryLocalPath) {
+            throw new ApiError(400, "Secondary marksheet file is required");
+        }
+        if(!HigherLocalPath) {
+            throw new ApiError(400, "Higher marksheet file is required");
+        }
+
+        // Upload files to Cloudinary
+        const [Aadhaar, Secondary, Higher] = await Promise.all([
+            uploadOnCloudinary(AadhaarLocalPath),
+            uploadOnCloudinary(SecondaryLocalPath),
+            uploadOnCloudinary(HigherLocalPath)
+        ]);
+
+        // Create student document record
+        const studentdetails = await studentdocs.create({
+            Phone,
+            Address,
+            Highesteducation,
+            SecondarySchool,
+            HigherSchool,
+            SecondaryMarks,
+            HigherMarks,
+            Aadhaar: Aadhaar.url,
+            Secondary: Secondary.url,
+            Higher: Higher.url,
+        });
+
+        // Update student with document reference
+        const theStudent = await student.findOneAndUpdate(
+            {_id: id}, 
+            {$set: {Isapproved: "pending", Studentdetails: studentdetails._id}},  
+            { new: true }
+        ).select("-Password -Refreshtoken");
+        
+        if(!theStudent) {
+            throw new ApiError(404, "Student not found");
+        }
+
+        return res
+            .status(200)
+            .json(new ApiResponse(200, theStudent, "Documents uploaded successfully"));
+    } catch (error) {
+        console.error("Document upload error:", error);
+        throw new ApiError(error.statusCode || 500, error.message || "Document upload failed");
     }
-
-    const {Phone, Address, Highesteducation, SecondarySchool, HigherSchool, SecondaryMarks, HigherMarks}  = req.body
-
-    if ([Phone, Address, Highesteducation, SecondarySchool, HigherSchool, SecondaryMarks, HigherMarks].some((field) => field?.trim() === "")) {
-        throw new ApiError(400, "All fields are required");
-    }
-
-    const alreadyExist = await studentdocs.findOne({Phone})
-
-    if(alreadyExist){
-        throw new ApiError(400, "phone number already exists")
-    }
-
-    const AadhaarLocalPath = req.files?.Aadhaar?.[0]?.path;
-
-    const SecondaryLocalPath = req.files?.Secondary?.[0]?.path;
-
-    const HigherLocalPath = req.files?.Higher?.[0]?.path
-
-    if(!AadhaarLocalPath){
-        throw new ApiError(400, "Aadhaar is required")
-    }
-
-    if(!SecondaryLocalPath){
-        throw new ApiError(400, "Secondary marksheet is required")
-    }
-
-    if(!HigherLocalPath){
-        throw new ApiError(400, "Higher marksheet is required")
-    }
-
-    const Aadhaar = await uploadOnCloudinary(AadhaarLocalPath)
-    const Secondary = await uploadOnCloudinary(SecondaryLocalPath)
-
-    const Higher = await uploadOnCloudinary(HigherLocalPath)
-
-    const studentdetails = await studentdocs.create({
-        Phone,
-        Address,
-        Highesteducation,
-        SecondarySchool,
-        HigherSchool,
-        SecondaryMarks,
-        HigherMarks,
-        Aadhaar: Aadhaar.url,
-        Secondary: Secondary.url,
-        Higher: Higher.url,
-    })
-
-
-    //const loggedstd = await student.findByIdAndUpdate(id, {})
-
-    const theStudent = await student.findOneAndUpdate({_id: id}, {$set: {Isapproved:"pending", Studentdetails: studentdetails._id}},  { new: true }).select("-Password -Refreshtoken")
-    
-    
-    if(!theStudent){
-        throw new ApiError(400,"faild to approve or reject || student not found")
-    }
-
-    return res
-    .status(200)
-    .json(new ApiResponse(200, theStudent, "documents uploaded successfully"))
-
-})
+});
 
 
 

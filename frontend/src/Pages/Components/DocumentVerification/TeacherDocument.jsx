@@ -11,15 +11,18 @@ const TeacherDocument = () => {
   const { Data } = useParams();
   const navigate = useNavigate();
   const [loader, setLoader] = useState(false);
+  const accessToken = localStorage.getItem('accessToken');
 
   useEffect(() => {
     const getData = async () => {
       try {
-        const response = await fetch(`/api/teacher/TeacherDocument/${Data}`, {
+        const response = await fetch(`http://localhost:8000/api/teacher/TeacherDocument/${Data}`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
+          "Authorization": `Bearer ${accessToken}`
           },
+          credentials: 'include'
         });
 
         if (!response.ok) {
@@ -72,22 +75,28 @@ const TeacherDocument = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoader(true);
-
+  
     const formDataObj = new FormData();
-
+  
     Object.keys(formData).forEach((key) => {
-      formDataObj.append(key, formData[key]);
+      if (formData[key]) {
+        formDataObj.append(key, formData[key]);
+      }
     });
-
+  
     try {
-      const response = await fetch(`/api/teacher/verification/${Data}`, {
-        method: "POST",
-        body: formDataObj,
+      const response = await fetch(`http://localhost:8000/api/teacher/verification/${Data}`, {
+        method: "POST", // Ensure the method is POST
+        credentials: "include", // Include cookies
+        headers: {
+          Authorization: `Bearer ${accessToken}`, // Add token to Authorization header
+        },
+        body: formDataObj, // Attach FormData as the body
       });
-
+  
       const responseData = await response.json();
       console.log("response", responseData);
-
+  
       setLoader(false);
       if (!response.ok) {
         setError(responseData.message);
@@ -97,6 +106,8 @@ const TeacherDocument = () => {
       }
     } catch (e) {
       console.error("Error:", e);
+      setError("An unexpected error occurred. Please try again.");
+      setLoader(false);
     }
   };
 

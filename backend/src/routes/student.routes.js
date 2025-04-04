@@ -19,23 +19,17 @@ router.route("/login").post(
 )
 
 router.route("/logout").post(authSTD, logout)
+// Add this route to match your frontend request:
 
-router.route("/Verification/:id").post(authSTD,
+router.post("/verification/:id", 
+    authSTD, 
     upload.fields([
-        {
-            name:"Aadhaar",
-            maxCount:1,
-        },
-        {
-            name:"Secondary",
-            maxCount:1,
-        },
-        {
-            name:"Higher",
-            maxCount:1
-        }
-    ]) ,
-    addStudentDetails)
+      { name: 'Aadhaar', maxCount: 1 },
+      { name: 'Secondary', maxCount: 1 },
+      { name: 'Higher', maxCount: 1 }
+    ]), 
+    addStudentDetails
+  );
      
 router.route("/StudentDocument/:id").get(authSTD, getStudent)
 

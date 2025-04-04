@@ -11,15 +11,20 @@ const StudentDocument = () => {
   const { Data } = useParams();
   const navigate = useNavigate();
   const [loader, setLoader] = useState(false);
+  const accessToken = localStorage.getItem('accessToken');
+ // console.log(accessToken);
 
   useEffect(() => {
+    
     const getData = async () => {
       try {
-        const response = await fetch(`/api/student/StudentDocument/${Data}`, {
+        const response = await fetch(`http://localhost:8000/api/student/StudentDocument/${Data}`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
+    "Authorization": `Bearer ${accessToken}`
           },
+          credentials: 'include'
         });
 
         if (!response.ok) {
@@ -27,7 +32,7 @@ const StudentDocument = () => {
         }
 
         const user = await response.json();
-        setdata(user.data);
+     
       } catch (error) {
         setError(error.message);
       }
@@ -72,10 +77,15 @@ const StudentDocument = () => {
     Object.keys(formData).forEach((key) => {
       formDataObj.append(key, formData[key]);
     });
-
+ console.log(formData)
     try {
-      const response = await fetch(`/api/student/verification/${Data}`, {
+      const response = await fetch(`http://localhost:8000/api/student/verification/${Data}`, {
         method: "POST",
+        credentials: 'include', // Include cookies
+        headers: {
+          // Don't set Content-Type for FormData
+          "Authorization": `Bearer ${accessToken}` // Add token to Authorization header
+        },
         body: formDataObj,
       });
 
