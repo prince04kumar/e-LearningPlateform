@@ -16,33 +16,35 @@ export default function AdminLogin() {
   // Function to handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+    console.log('clicked');
+  
     // Client-side validation
     const newErrors = {};
-
+  
     if (!User.trim()) {
-        newErrors.User = "User Name is required";
+      newErrors.User = "User Name is required";
     }
   
     if (!Password.trim()) {
       newErrors.password = "Password is required";
     }
-
+  
     if (Object.keys(newErrors).length > 0) {
       // Update the errors state and prevent form submission
       setErrors(newErrors);
+      console.log(newErrors);
       return;
     }
-
+  
     // Prepare data object to send to the backend
     const data = {
       username: User,
       password: Password,
     };
-
+  
     try {
       // Send data to backend
-      const response = await fetch(`/api/admin/login`, {
+      const response = await fetch(`http://localhost:8000/api/admin/login`, {
         method: 'POST',
         credentials: "include",
         headers: {
@@ -50,34 +52,39 @@ export default function AdminLogin() {
         },
         body: JSON.stringify(data),
       });
-
-      const responesData = await response.json()
-      setErr(responesData.message);
-      const userid = responesData.data.admin._id
- 
+  
+      console.log(response);
+      const responseData = await response.json();
+      setErr(responseData.message);
+  
       // Handle response
       if (response.ok) {
-          console.log(response); 
-        
-       navigate(`/admin/${userid}`)
+        console.log(response);
+  
+        // Save the token to localStorage
+        const token = responseData.data.token; // Assuming the token is returned in `data.token`
+        localStorage.setItem("token", token);
+        console.log(token);
+  
+        const userid = responseData.data.admin._id;
+        navigate(`/admin/${userid}`);
       } else if (response.status === 401) {
         // Incorrect password
-        setErrors({ password: responesData.message || "Incorrect password" });
+        setErrors({ password: responseData.message || "Incorrect password" });
       } else if (response.status === 403) {
         // Account locked, disabled, or other authentication issues
-
-        setErrors({ general: responesData.message || "Login failed" });
+        setErrors({ general: responseData.message || "Login failed" });
       } else if (response.status === 400) {
-        setErrors({ general: responesData.message || "Admin does not exist" });
+        setErrors({ general: responseData.message || "Admin does not exist" });
       } else {
         // Other unexpected errors
         setErrors({ general: "An unexpected error occurred" });
       }
     } catch (error) {
-   
-      setErrors(error.message);
+      setErrors({ general: error.message });
     }
   };
+
 
   return (
     <>

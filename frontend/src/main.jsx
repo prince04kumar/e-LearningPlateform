@@ -50,7 +50,7 @@ const router = createBrowserRouter(
       <Route path='/contact' element={<Contact/>}/>
       <Route path='/about' element={<About/>}/>
       <Route path='/varifyEmail' element={<VarifyEmail/>}/>
-      <Route path='/adminLogin/' element={<AdminLogin/>}/>
+      <Route path='/adminLogin/' element={<AdminLogin/>}/>w
       <Route path='/rejected/:user/:ID' element={<Rejected/>}/>
       <Route path='/pending' element={<Pending/>}/>
       <Route path='/admin/:data' element={<Admin/>}/>
