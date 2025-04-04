@@ -6,7 +6,7 @@ import { RotatingLines } from "react-loader-spinner";
 import logo from "../../Images/logo.svg";
 
 const TeacherDocument = () => {
-  const [data, setData] = useState([]);
+  const [data, setData] = useState({});  // Initialize as empty object
   const [error, setError] = useState("");
   const { Data } = useParams();
   const navigate = useNavigate();
@@ -20,7 +20,7 @@ const TeacherDocument = () => {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
-          "Authorization": `Bearer ${accessToken}`
+            "Authorization": `Bearer ${accessToken}`
           },
           credentials: 'include'
         });
@@ -31,26 +31,42 @@ const TeacherDocument = () => {
 
         const user = await response.json();
         setData(user.data);
+        
+        // Update formData with fetched data
+        setFormData(prevState => ({
+          ...prevState,
+          Phone: user.data.Phone || "",
+          Address: user.data.Address || "",
+          Experience: user.data.Experience || "",
+          SecondarySchool: user.data.SecondarySchool || "",
+          SecondaryMarks: user.data.SecondaryMarks || "",
+          HigherSchool: user.data.HigherSchool || "",
+          HigherMarks: user.data.HigherMarks || "",
+          UGcollege: user.data.UGcollege || "",
+          UGmarks: user.data.UGmarks || "",
+          PGcollege: user.data.PGcollege || "",
+          PGmarks: user.data.PGmarks || "",
+        }));
       } catch (error) {
         setError(error.message);
       }
     };
 
     getData();
-  }, []);
+  }, [Data, accessToken]);  // Add dependencies
 
   const [formData, setFormData] = useState({
-    Phone: data.Phone || "",
-    Address: data.Address || "",
-    Experience: data.Experience || "",
-    SecondarySchool: data.SecondarySchool || "",
-    SecondaryMarks: data.SecondaryMarks || "",
-    HigherSchool: data.HigherSchool || "",
-    HigherMarks: data.HigherMarks || "",
-    UGcollege: data.UGcollege || "",
-    UGmarks: data.UGmarks || "",
-    PGcollege: data.PGcollege || "",
-    PGmarks: data.PGmarks || "",
+    Phone: "",
+    Address: "",
+    Experience: "",
+    SecondarySchool: "",
+    SecondaryMarks: "",
+    HigherSchool: "",
+    HigherMarks: "",
+    UGcollege: "",
+    UGmarks: "",
+    PGcollege: "",
+    PGmarks: "",
     Aadhaar: null,
     Secondary: null,
     Higher: null,
@@ -59,10 +75,13 @@ const TeacherDocument = () => {
   });
 
   const handleFileChange = (fileType, e) => {
-    setFormData({
-      ...formData,
-      [fileType]: e.target.files[0],
-    });
+    const file = e.target.files[0];
+    if (file) {
+      setFormData({
+        ...formData,
+        [fileType]: file,
+      });
+    }
   };
 
   const handleInputChange = (field, value) => {
@@ -78,35 +97,46 @@ const TeacherDocument = () => {
   
     const formDataObj = new FormData();
   
+    // Check if required files are present
+    if (!formData.Aadhaar) {
+      setError("Aadhaar card is required");
+      setLoader(false);
+      return;
+    }
+  
+    // Add all form data to FormData object
     Object.keys(formData).forEach((key) => {
-      if (formData[key]) {
+      if (formData[key] !== null && formData[key] !== undefined) {
         formDataObj.append(key, formData[key]);
       }
     });
   
     try {
       const response = await fetch(`http://localhost:8000/api/teacher/verification/${Data}`, {
-        method: "POST", // Ensure the method is POST
-        credentials: "include", // Include cookies
+        method: "POST",
+        credentials: "include",
         headers: {
-          Authorization: `Bearer ${accessToken}`, // Add token to Authorization header
+          Authorization: `Bearer ${accessToken}`,
+          // Don't set Content-Type when sending FormData
         },
-        body: formDataObj, // Attach FormData as the body
+        body: formDataObj,
       });
   
+      if (!response.ok) {
+        const responseData = await response.json();
+        throw new Error(responseData.message || "Form submission failed");
+      }
+      
       const responseData = await response.json();
       console.log("response", responseData);
   
       setLoader(false);
-      if (!response.ok) {
-        setError(responseData.message);
-      } else {
-        console.log("Form submitted successfully!");
-        navigate("/pending");
-      }
+      console.log("Form submitted successfully!");
+      navigate("/pending");
+      
     } catch (e) {
       console.error("Error:", e);
-      setError("An unexpected error occurred. Please try again.");
+      setError(e.message || "An unexpected error occurred. Please try again.");
       setLoader(false);
     }
   };
@@ -143,13 +173,13 @@ const TeacherDocument = () => {
           <Input
             label={"First Name"}
             placeholder={"First Name"}
-            value={data.Firstname}
+            value={data.Firstname || ""}
             readonly
           />
           <Input
             label={"Last Name"}
             placeholder={"Last Name"}
-            value={data.Lastname}
+            value={data.Lastname || ""}
             readonly
           />
           <Input
@@ -176,7 +206,6 @@ const TeacherDocument = () => {
           <InputUpload
             label={"Upload Aadhar Card"}
             placeholder={"Upload Aadhar Card"}
-            value={formData.Aadhaar}
             onChange={(e) => handleFileChange("Aadhaar", e)}
           />
         </div>
@@ -206,7 +235,6 @@ const TeacherDocument = () => {
             <div className=" mt-[-1.5rem]">
               <InputUpload
                 placeholder={"Upload 10th Result"}
-                value={formData.Secondary}
                 onChange={(e) => handleFileChange("Secondary", e)}
               />
             </div>
@@ -232,7 +260,6 @@ const TeacherDocument = () => {
             <div className=" mt-[-1.5rem]">
               <InputUpload
                 placeholder={"Upload 12th Result"}
-                value={formData.Higher}
                 onChange={(e) => handleFileChange("Higher", e)}
               />
             </div>
@@ -256,7 +283,6 @@ const TeacherDocument = () => {
               <div className=" mt-[-1.5rem]">
                 <InputUpload
                   placeholder={"Upload Graduation .."}
-                  value={formData.UG}
                   onChange={(e) => handleFileChange("UG", e)}
                 />
               </div>
@@ -280,14 +306,13 @@ const TeacherDocument = () => {
               <div className=" mt-[-1.5rem]">
                 <InputUpload
                   placeholder={"Upload P.G. Result"}
-                  value={formData.PG}
                   onChange={(e) => handleFileChange("PG", e)}
                 />
               </div>
             </div>
         </div>
 
-        {error && <p className=" text-white text-xl m-5 text-center">!! {error}</p>}
+        {error && <p className="text-red-500 text-xl m-5 text-center">!! {error}</p>}
         <div className=" bg-[#0D286F] p-3 m-6 rounded-md w-[7rem] ml-[85%] cursor-pointer">
           <button className=" text-white text-sm" type="submit">
             Submit ▶️
